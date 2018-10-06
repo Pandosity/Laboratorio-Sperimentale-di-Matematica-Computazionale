@@ -1,0 +1,99 @@
+\documentclass{article}
+\usepackage[a4paper, top=3cm, left=3cm, bottom=3cm, right=3cm]{geometry}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc} 
+\usepackage[italian]{babel} 
+\usepackage{lipsum} 
+\usepackage{url} 
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{psfrag}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{tikz-cd}
+\usepackage{mathtools}
+\usepackage{tikz} 
+\usepackage{caption}
+\captionsetup{labelformat=empty,textfont=sl}
+\usetikzlibrary{decorations.markings}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbered,framed]{matlab-prettifier}
+
+\lstset{
+  style              = Matlab-editor,
+  basicstyle         = \mlttfamily,
+  escapechar         = ",
+  mlshowsectionrules = true,
+}
+
+\title{\textbf{Laboratorio Sperimentale di Matematica Computazionale / / Esercitazione 7}}
+\author{Dario Rancati} 
+
+
+\begin{document}
+
+
+
+
+\section*{Esercizio 1}
+La function calcola le soluzioni di $y'=\cos(x^2)$ e di $z'=\sin(x^2),$ sia avanti che indietro nel tempo. Abbiamo scelto $xmax = 150$ in quanto le soluzioni si avvicinano chiaramente ai due punti limite (gli integrali di Fresnel), che la funztion restituisce e che valgono $0.6264;0.6233.$ e il simmetrico rispetto all'origine (l'intera soluzione è infatti simmetrica rispetto ad essa).
+\begin{lstlisting}
+function l=spiraleeulero
+fun=@(x,y) [cos(x^2);sin(x^2)];
+revfun=@(x,y) [-cos(x^2);-sin(x^2)];
+options=odeset('RelTol',1e-10);
+[~,y1]=ode45(fun,[0 150],[0;0],options);
+[~,y2]=ode45(revfun,[0 150],[0;0],options);
+y=[flip(y2);y1];
+plot(y(:,1),y(:,2),'r');
+axis equal
+axis([-1 1 -1 1])
+title('Spirale di Eulero');
+l=y1(end,:);
+end
+\end{lstlisting}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_7_1.jpg}
+\end{figure}
+
+\section*{Esercizio 2}
+L'equazione che ho scelto in modo che abbia come soluzione la spirale è: 
+\begin{equation}
+\begin{cases}
+x'=x\log(b)-y \\ y'=y\log(b)+x 
+\end{cases}
+\end{equation}
+
+determinata con una ricerca in rete. Di seguito la function che ne disegna la soluzione, preso in inputo il fattore $b$ di decrescita della spirale:
+
+\begin{lstlisting}
+function []=spiralecartesio(b)
+f=@(x,y) [y(1)*log(b)-y(2);y(2)*log(b)+y(1)];
+sol1=@(teta) b.^teta.*cos(teta);
+sol2=@(teta) b.^teta.*sin(teta);
+[t,x]=ode45(f,[0,150],[1;0]);
+y1=sol1(t);
+y2=sol2(t);
+plot(x(:,1),x(:,2),y1,y2,'--');
+axis equal
+axis([-1 1 -1 1])
+title('Spirale di Cartesio')
+end
+\end{lstlisting}
+
+La figura della spirale, disegnata mediante la soluzione del sistema, è la seguente:
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=16cm]{figura_7_2.jpg}
+\end{figure}
+
+
+
+\end{document}

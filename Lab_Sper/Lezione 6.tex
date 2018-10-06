@@ -1,0 +1,267 @@
+\documentclass{article}
+\usepackage[a4paper, top=3cm, left=3cm, bottom=3cm, right=3cm]{geometry}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc} 
+\usepackage[italian]{babel} 
+\usepackage{lipsum} 
+\usepackage{url} 
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{psfrag}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{tikz-cd}
+\usepackage{mathtools}
+\usepackage{tikz} 
+\usepackage{caption}
+\captionsetup{labelformat=empty,textfont=sl}
+\usetikzlibrary{decorations.markings}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbered,framed]{matlab-prettifier}
+
+\lstset{
+  style              = Matlab-editor,
+  basicstyle         = \mlttfamily,
+  escapechar         = ",
+  mlshowsectionrules = true,
+}
+
+\title{\textbf{Laboratorio Sperimentale di Matematica Computazionale / / Esercitazione 6}}
+\author{Dario Rancati} 
+
+
+\begin{document}
+
+\section*{Esercizio 1}
+
+Iniziamo a svolgere questo mastodontico esercizio. La prima cosa che dobbiamo fare è adattare la nostra function che implementa il metodo di Eulero al caso vettoriale, e lo facciamo con la seguente funzione \texttt{eulerovec}, che restituisce il vettore dei tempi $x$ e la matrice soluzione $u$:
+\begin{lstlisting}
+function [x,u]=eulerovec(odefun,slot,init,h)
+N=floor((slot(2)-slot(1))/h);
+x=zeros(1,N+1);
+x(1)=slot(1);
+for i=2:N+1
+    x(i)=x(i-1)+h;
+end
+u=zeros(length(init),N+1);
+u(:,1)=init;
+for i=2:N+1
+    ff=feval(odefun, x(i-1),u(:,i-1));
+    u(:,i)=u(:,i-1)+h*ff;
+end
+end
+\end{lstlisting}
+
+\noindent
+Dette ora $y_{i}$ con $i$ che varia tra 1 e 6 le variabili indicate dal testo, dobbiamo scrivere un sistema di equazioni differenziali del primo ordine da dare in pasto a \texttt{eulerovec} che sia equivalente all'equazione del testo.
+Naturalmente, dalla definizione del testo segue:
+$$y_{1}'=y_{4}$$
+$$y_{2}'=y_{5}$$
+$$y_{3}'=y_{6}$$
+Riscriviamo l'equazione del testo (che notiamo fornire esattamente le tre derivate che ci mancano) in funzione dei dati forniti dal testo, indicando con \textbf{y} il vettore $(y_{1}, y_{2}, y_{3})$, e con con \textbf{w} il vettore $(y_{4}, y_{5}, y_{6})$:
+$$\mathbf{w'}=\mathbf{F}- \mathbf{y} \frac{\mathbf{w}^{T}\mathbf{w}+\mathbf{y}^{T}\mathbf{F}}{\mathbf{y}^{T}\mathbf{y}}$$
+\noindent
+ed ora possiamo finalmente scrivere una funzione che implementi la suddetta equazione differenziale.
+\begin{lstlisting}
+function yp=sfera(x,y)
+%y vettore colonna
+g=9.81;
+F=[0;0;-g];
+yp=[y(4);y(5);y(6);F-2*y(1:3)*((2*(y(4:6)'*y(4:6))+2*(y(1:3)'*F))./norm(2*y(1:3))^2);];
+yp=yp;
+end
+\end{lstlisting}
+\noindent
+Con gioia risolviamo l'equazione usando i quattro metodi. Iniziamo con Eulero:
+\begin{lstlisting}
+function e=motosferaeulero
+y0=[0;1;0;0.8;0;1.2];
+tspan=[0,10];
+[x,y]=eulerovec(@(x,y)sfera(x,y),tspan,y0,0.0025);
+[t,u]=eulerovec(@(x,y)sfera(x,y),tspan,y0,0.00025);
+plot3(y(1,:),y(2,:),y(3,:),u(1,:),u(2,:),u(3,:),'--')
+title('Eulero')
+e(1)=abs(y(1,length(x))^2+y(2,length(x))^2+y(3,length(x))^2-1);
+e(2)=abs(u(1,length(t))^2+u(2,length(t))^2+u(3,length(t))^2-1);
+end
+\end{lstlisting}
+Questa funzione restituisce $0.4482$ e $0.0435:$ dunque che $h=0.0025$ \`{e} del tutto insufficiente per ottenere una solzuione soddisfacente, mentre il secondo valore funziona già decisamente meglio.
+\begin{lstlisting}
+function e=motosferaRK
+y0=[0;1;0;0.8;0;1.2];
+tspan=[0,10];
+[x,y]=RK4(@(x,y)sfera(x,y),tspan,y0,0.005);
+[t,u]=RK4(@(x,y)sfera(x,y),tspan,y0,0.0005);
+plot3(y(1,:),y(2,:),y(3,:),u(1,:),u(2,:),u(3,:),'--')
+title('Runge-Kutta')
+e(1)=abs(y(1,length(x))^2+y(2,length(x))^2+y(3,length(x))^2-1);
+e(2)=abs(u(1,length(t))^2+u(2,length(t))^2+u(3,length(t))^2-1);
+end
+\end{lstlisting}
+Questa restituisce errori dell'ordine di $10^{-5}$, e infatti le curve sono indistinguibili ad occhio nudo..
+\begin{lstlisting}
+function e=motosferaode23
+y0=[0;1;0;0.8;0;1.2];
+tspan=[0,10];
+options=odeset('RelTol',1e-10);
+[x,y]=ode23(@(x,y)sfera(x,y),tspan,y0);
+[t,u]=ode23(@(x,y)sfera(x,y),tspan,y0,options);
+plot3(y(:,1),y(:,2),y(:,3),u(:,1),u(:,2),u(:,3),'--')
+title('ode23')
+e(1)=abs(y(length(x),1)^2+y(length(x),2)^2+y(length(x),3)^2-1);
+e(2)=abs(u(length(t),1)^2+u(length(t),2)^2+u(length(t),3)^2-1);
+end
+\end{lstlisting}
+Anche questa \`{e} molto precisa, in particolare nel secondo caso (l'errore è minore di $10^{-4}$).
+\begin{lstlisting}
+function e=motosferaode45
+y0=[0;1;0;0.8;0;1.2];
+tspan=[0,50];
+options=odeset('RelTol',1e-10);
+[x,y]=ode45(@(x,y)sfera(x,y),tspan,y0);
+[t,u]=ode45(@(x,y)sfera(x,y),tspan,y0,options);
+plot3(y(:,1),y(:,2),y(:,3),u(:,1),u(:,2),u(:,3),'--')
+title('ode45')
+e(1)=abs(y(length(x),1)^2+y(length(x),2)^2+y(length(x),3)^2-1);
+e(2)=abs(u(length(t),1)^2+u(length(t),2)^2+u(length(t),3)^2-1);
+end
+\end{lstlisting}
+Qua invece, mentre il passo più piccolo ci fornisce una soluzione accettabile, quello più grande devia in modo devastante dalla soluzione cercata: aumentando l'intervallo di integrazione (ad esempio a 50) la superfice tangente alla soluzione non appare più per nulla sferica.
+
+\newpage
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_6_1_1.jpg}
+\end{figure}
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_6_1_2.jpg}
+\end{figure}
+
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_6_1_3.jpg}
+\end{figure}
+
+\newpage
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_6_1_4.jpg}
+\end{figure}
+
+\newpage
+
+
+\section*{Esercizio 2}
+
+La function risolve l'equazione differenziale dell'attrattore di Lorenz con i parametri del testo e ne plotta i grafici richiesti:
+\begin{lstlisting}
+function []=lorenz(tmax)
+sigma=10;
+r=28;
+b=8/3;
+f=@(x,y) [sigma*(y(2)-y(1));r*y(1)-y(2)-y(1)*y(3); y(1)*y(2)-b*y(3)];
+[x1,y1]=ode45(f,[0,tmax],[10;0;20]);
+[x2,y2]=ode45(f,[0,tmax],[11;0;20]);
+
+subplot(2,2,1) 
+plot (x1,y1(:,1),'r',x2,y2(:,1),'b');
+
+subplot(2,2,2) 
+plot (x1,y1(:,2),'r',x2,y2(:,2),'b');
+
+subplot(2,2,3)
+plot (x1,y1(:,3),'r',x2,y2(:,3),'b');
+
+subplot(2,2,4) 
+plot3(y1(:,1),y1(:,2),y1(:,3),y2(:,1),y2(:,2),y2(:,3));
+end
+\end{lstlisting}
+
+\noindent
+Di seguito i grafici richiesti (con $tmax=50$), da cui si intuisce bene quanto è caotica la soluzione ottenuta.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_6_2.jpg}
+\end{figure}
+
+\newpage
+
+\section*{Esercizio 3}
+
+Scriviamo le funzioni che risolvono l'equazione di Van Der Pol tramite \texttt{ode45} e tramite \texttt{ode15s}. Adottiamo una dilatazione dinamica lineare dei punti della griglia, per ottenere un grafico che gestisca decentemente il fatto che anche la soluzione cresce abbastanza (per far variare $\mu$ lo abbiamo messo come variabile vettoriale):
+\begin{lstlisting}
+function [v]=vanderpol1
+%restituisce il numero di punti della griglia al variare di mu
+mu=[0.1,1,10,100];
+v=zeros(1,4);
+for i=1:4
+    f=@(t,y) [y(2);mu(i)*(1-y(1)^2)*y(2)-y(1)];
+    [t,y]=ode45(f,[0 100+50*i],[1;1]);
+    subplot(4,2,2*i-1)
+    plot(t,y(:,1));
+    subplot(4,2,2*i)
+    plot(y(:,1),y(:,2));
+    v(i)=length(t);
+end
+end
+\end{lstlisting}
+
+\begin{lstlisting}
+function [v]=vanderpol2
+%restituisce il numero di punti della griglia al variare di mu
+mu=[0.1,1,10,100];
+v=zeros(1,4);
+for i=1:4
+    f=@(t,y) [y(2);mu(i)*(1-y(1)^2)*y(2)-y(1)];
+    [t,y]=ode15s(f,[0 100+50*i],[1;1]);
+    subplot(4,2,2*i-1)
+    plot(t,y(:,1));
+    subplot(4,2,2*i)
+    plot(y(:,1),y(:,2));
+    v(i)=length(t);
+end
+end
+\end{lstlisting}
+
+\noindent
+Benchè i grafici siano uguali ad occhio nudo, il numero di nodi ottenuti con \texttt{ode45} (761, 2129, 6909, 67585 per i vari $\mu$) risulta molto maggiore rispetto a quello ottenuto con \texttt{ode15s}( 886, 1935, 2577, 585), in particolare per $\mu$ elevato.
+
+\begin{figure} 
+\centering
+\includegraphics[width=\textwidth]{figura_6_3_1.jpg}
+\caption{ode45}
+\end{figure}
+
+\noindent
+Il metodo di Eulero appare invece pessimo, con le soluzioni che oscillano in maniera spropositata e smettono di essere disegnati ma matlab già per $h<1$.
+
+\begin{lstlisting}
+function []=vanderpoleulero(h)
+%h=numero di nodi della griglia
+mu=[0.1,1,10,100];
+for i=1:4
+    y(1,1)=1; y(2,1)=1;
+    for j=2:h+1
+        y(1,j)=y(2,j-1)*100/(h+1)+y(1,j-1);
+        y(2,j)=y(2,j-1)+100/(h+1)*mu(i)*(1-y(1,j-1)^2)*y(2,j-1)-y(1,j-1);
+    end
+    t=linspace(0,100,h+1);
+    subplot(4,2,2*i-1), plot(t,y(1,:));
+    subplot(4,2,2*i), plot(y(1,:),y(2,:));
+end
+end
+\end{lstlisting}
+
+\clearpage
+
+\end{document}

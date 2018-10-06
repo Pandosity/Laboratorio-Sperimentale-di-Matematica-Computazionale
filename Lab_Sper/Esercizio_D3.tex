@@ -1,0 +1,81 @@
+\documentclass{article}
+\usepackage[a4paper, top=3cm, left=3cm, bottom=3cm, right=3cm]{geometry}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc} 
+\usepackage[italian]{babel} 
+\usepackage{lipsum} 
+\usepackage{url} 
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{psfrag}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{tikz-cd}
+\usepackage{mathtools}
+\usepackage{tikz} 
+\usepackage{caption}
+\captionsetup{labelformat=empty,textfont=sl}
+\usetikzlibrary{decorations.markings}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbered,framed]{matlab-prettifier}
+
+\lstset{
+  style              = Matlab-editor,
+  basicstyle         = \mlttfamily,
+  escapechar         = ",
+  mlshowsectionrules = true,
+}
+
+\title{\textbf{Laboratorio Sperimentale di Matematica Computazionale / / Trasformazione Cilindrica - D3}}
+\author{Dario Rancati - 539365} 
+
+
+\begin{document}
+
+\maketitle
+
+\noindent
+La trasformazione da implementare ha il primo, evidente, problema che l'immagine della trasformazione considerata (che dipende da una cotangente) ha potenzialmente coordinata x infinita se trasformiamo l'intera immagine di partenza. Per ovviare a questo problema abbiamo arbitrariamente scelto che la dimensione orizzontale dell'immagine trasformata sia pari a dieci volte quella dell'immagine in partenza. Abbiamo sostituito l'arcocotangente \texttt{acot} di matlab con un arcocotangente traslato \texttt{acot1} che trasla la soluzione di $\pi$ ogni volta che questa è negativa, perchè avevamo calcolato così la formula e sembrava più semplice di cambiarla usando il codominio di \texttt{acot}.
+
+\begin{lstlisting}
+function Y=proiettaD3(X)
+[n,m]=size(X);
+%qua innanzitutto capiamo la larghezza della proiezione
+%e  ne settiamo le dimensioni
+h=floor(cot(pi/m)); 
+Y=zeros(n,10*m);
+%qua mettiamo la formula trigonometrica nella coordinata j
+%ovviamente ip e jp sono le coordinate ausiliarie per scrivere quelle di Y
+for i=1:n
+    for j=1:10*m
+        ip=i;
+        jp=floor(m*(1-acot1(h*(2*j/(10*m)-1))/pi));
+        % ora controlliamo che le coordinate siano nell'immagine di partenza
+        if jp>0 && jp<=m
+        Y(i,j)=X(ip,jp);
+        end
+    end
+end
+imagesc(Y);
+end
+\end{lstlisting}
+
+\noindent
+Mettiamo di seguito l'immagine di un insieme di Mandelbrot e della sua immagine mediante la funzione
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{Mandelbrot.jpg}
+\end{figure}
+
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=\textwidth]{Mandelbrot_G2.jpg}
+\end{figure}
+
+\end{document}

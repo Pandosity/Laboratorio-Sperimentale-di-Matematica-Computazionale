@@ -1,0 +1,165 @@
+\documentclass{article}
+\usepackage[a4paper, top=3cm, left=3cm, bottom=3cm, right=3cm]{geometry}
+\usepackage[T1]{fontenc} 
+\usepackage[utf8]{inputenc} 
+\usepackage[italian]{babel} 
+\usepackage{lipsum} 
+\usepackage{url} 
+\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{psfrag}
+\usepackage{amsfonts}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{tikz-cd}
+\usepackage{mathtools}
+\usepackage{tikz} 
+\usepackage{caption}
+\captionsetup{labelformat=empty,textfont=sl}
+\usetikzlibrary{decorations.markings}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[numbered,framed]{matlab-prettifier}
+
+\lstset{
+  style              = Matlab-editor,
+  basicstyle         = \mlttfamily,
+  escapechar         = ",
+  mlshowsectionrules = true,
+}
+
+\title{\textbf{Laboratorio Sperimentale di Matematica Computazionale / / Esercitazione 3}}
+\author{Dario Rancati} 
+
+
+\begin{document}
+
+\section*{Esercizio 1}
+Dobbiamo innanzitutto capire a quale equazione obbedisce il numero di batteri della colonia. Dal fatto che in tempi uguali la soluzione aumenti dello stesso fattore in tempi uguali deduciamo che la legge che regola la crescita dei batteri è esponenziale , cioè detta $y$ la quantità di batteri dipendente dal tempo $t$ espresso in ore vale
+$$y(t)=K \cdot a^{t}$$
+dal fatto che ogni ora il tempo raddoppi abbiamo che $a=2$, e dal fatto che all'inizio i batteri siano $1000$ abbiamo $K=1000$ (anche se quest'ultima informazione non cambia l'equazione differenziale del problema). Ne segue che $y(t) = 1000 \cdot 2^t$, che risolve l'equazione differenziale
+$$y'(t)=\log{2}\cdot y$$
+per cui la function che risolve il problema col metodo di Eulero in funzione di un generico valore iniziale (nel nostro caso 1000) e del passo $h$ (che settiamo a 0.01) sarà:
+\begin{lstlisting}
+function []=coloniabatteri(y0,h)
+%y0=valore iniziale, h passo di integrazione
+f=@(x,y) log(2)*y;
+[x,u]=eulero(f,[0,6],y0,h);
+plot(x,u)
+title('Colonia Batterica');
+end
+\end{lstlisting}
+
+\noindent
+Il grafico di tale soluzione numerica nelle prime sei ore è il seguente:
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_3_1.jpg}
+\end{figure}
+
+\newpage
+
+\section*{Esercizio 2}
+
+La funzione \texttt{plutonio} seguente restituisce il tempo necessario ad avere, come richiesto dal testo, una riduzione di $\frac{1}{10}$ della quantità di plutonio iniziale (per farla abbiamo usato la funzione $\texttt{find}$) in funzione del passo $h$ del metodo di Runge-Kutta (che setteremo a $0.01$). Il grafico è quello, sempre come da testo, nel decadimento nei primi 50 anni.
+
+\begin{lstlisting}
+function k=plutonio(h)
+%h e' il passo di integrazione
+fun=@(x,y) -1/50*log(2)*y;
+tspan=[0,200];
+y0=1;
+[t,u]=RK4(fun,tspan,y0,h);
+l=find(u<0.1,1);
+k=t(l);
+m=find(t>50,1);
+plot(t(1:m),u(1:m))
+title('Decadimento nei primi 50 anni')
+axis([0 50 0 1])
+end
+\end{lstlisting}
+
+\noindent
+Il tempo richiesto alla divisione per 10 è $166.1$ anni. Il grafico nel decadimento nei primi 50 anni è il seguente:
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_3_2.jpg}
+\end{figure}
+
+\newpage
+
+\section*{Esercizio 3}
+
+Lo script seguente applica la routine \texttt{ode45} all'equazione logistica con i parametri assegnati.
+\begin{lstlisting}
+%la popolazione diventa un decimo di quella iniziale a t~0.23 
+a=0.2;
+K=0.01;
+b=a/K;
+y0=2;
+f=@(x,y) y*(a-b*y);
+[t,u] = ode45(f,[0 0.5],y0);
+plot(t,u,'r');
+\end{lstlisting}
+
+\noindent
+Dal disegno ricaviamo che intorno a $t=0.23$ la popolazione sarà diventata un decimo di quella iniziale.
+Il grafico richiesto è il seguente:
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_3_3.jpg}
+\end{figure}
+
+\newpage
+
+\section*{Esercizio 4}
+
+Innanzitutto scriviamo una funzione che implementi l'equazione logistica con il parametro mathusiano $\alpha$ dipendente dal tempo, e che la risolva mediante la routine $\texttt{ode45}$:
+\begin{lstlisting}
+function [x,y]=eqlogistica2(y0)
+f=@(t,y) y*(1/2+cos(2*pi*t))*(1-y/100);
+[x,y] = ode45(f,[0 20],y0);
+end
+\end{lstlisting}
+
+\noindent
+Fatto ciò, scriviamo uno script che applichi tale funzione con il parametro iniziale settato a $1, 10, 50, 200$ e che faccia i quattro grafici richiesti:
+
+\begin{lstlisting}
+[x1,y1]=eqlogistica2(1);
+[x2,y2]=eqlogistica2(10);
+[x3,y3]=eqlogistica2(50);
+[x4,y4]=eqlogistica2(200);
+subplot(2,2,1) 
+plot(x1,y1)
+title('y0=1')
+
+subplot(2,2,2) 
+plot(x2,y2)
+title('y0=10')
+
+subplot(2,2,3) 
+plot(x3,y3)
+title('y0=50')
+
+subplot(2,2,4) 
+plot(x4,y4)
+title('y0=200')
+\end{lstlisting}
+
+\noindent
+In tutti e quattro i casi la soluzione tende alla retta $y=100$, ovviamente in tre casi crescendo e in uno decrescendo.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=\textwidth]{figura_3_4.jpg}
+\end{figure}
+
+
+
+\end{document}
